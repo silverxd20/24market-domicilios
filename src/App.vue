@@ -11,49 +11,45 @@
 
       <div class="d-flex justify-content-center">
         <v-btn rounded @click="agregarDireccion(index)">
-        <img src="./assets/plus-circle.png">
+          <img src="./assets/plus-circle.png" />
         </v-btn>
       </div>
 
-      <hr>
+      <hr />
 
-    <v-layout class="d-flex justify-content-center">
-      <v-list>
-      <v-list-item
-        v-for="(datos, index) in direccionLista"
-        :key="index"
-      >
-      <v-textarea
-          label="Nombre del Barrio"
-          auto-grow
-          centered
-          class="mr-3"
-          outlined
-          rows="1"
-          row-height="5"
-          v-model="datos.name"
-          @click="clickHandleList(index)"
-        ></v-textarea>
+      <v-layout class="d-flex justify-content-center">
+        <v-list>
+          <v-list-item v-for="(datos, index) in direccionLista" :key="index">
+            <v-textarea
+              label="Nombre del Barrio"
+              auto-grow
+              centered
+              class="mr-3"
+              outlined
+              rows="1"
+              row-height="5"
+              v-model="datos.barrioName"
+              @click="clickHandleList(index)"
+            ></v-textarea>
 
-        <v-textarea
-          label="Precio $"
-          auto-grow
-          class="ml-3"
-          outlined
-          rows="1"
-          row-height="5"
-          v-model="datos.precio"
-        ></v-textarea>
+            <v-textarea
+              label="Precio $"
+              auto-grow
+              class="ml-3"
+              outlined
+              rows="1"
+              row-height="5"
+              v-model="datos.precio"
+            ></v-textarea>
 
-        <v-icon @click="QuitarDireccion(index)" class="ml-2 mb-4">mdi-close</v-icon>
-      </v-list-item>
-
-    </v-list>
-    </v-layout>
-      <hr>
+            <v-icon @click="QuitarDireccion(index)" class="ml-2 mb-4">mdi-close</v-icon>
+          </v-list-item>
+        </v-list>
+      </v-layout>
+      <hr />
       <!-- Boton Guardar -->
       <div class="d-flex justify-content-center">
-      <v-btn>Guardar</v-btn>
+        <v-btn>Guardar</v-btn>
       </div>
     </v-card>
   </div>
@@ -63,6 +59,7 @@
 export default {
   created() {
     this.init();
+    this.getDirecciones()
   },
 
   data() {
@@ -94,23 +91,36 @@ export default {
     },
 
     //Llama la lista de direcciones guardadas
-    getDirecciones(index){
-
+    getDirecciones() {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(this.firebaseConfig);
+      }
+      let db
+      db = firebase.firestore();
+      //Solicita todos los documentos y su data interna
+      db.collection("direcciones")
+        .get()
+        .then(querySnapshot => {
+          querySnapshot.forEach(doc => {
+            if (doc.id) {
+              console.log("Document ID: " + doc.id);
+              console.log("Data: " + doc.data());
+            }
+          });
+        });
     },
 
     //quita la direccion de la lista
-    QuitarDireccion(index){
+    QuitarDireccion(index) {
       this.$delete(this.direccionLista, index);
     },
     //Agrega los campos para poner una nuevo domicilio
-    agregarDireccion(index){
-      this.direccionLista.push({ name: "", precio: "" });
-    
+    agregarDireccion(index) {
+      this.direccionLista.push({ barrioName: "", precio: "" });
     }
   }
 };
 </script>
 
 <style scoped>
-
 </style>
