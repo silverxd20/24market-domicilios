@@ -1,60 +1,63 @@
 <template>
   <div>
-    <v-card class="container mt-3 mb-3">
-      <div class="bg-success pb-1 pt-1">
-        <h4 class="text-center text-light">Domicilios</h4>
-      </div>
+    <div class="divBackground pt-3 pb-3">
+      <v-card class="container">
+        <div class="bg-success pb-1 pt-1">
+          <h4 class="text-center text-light">Agregar Domicilios</h4>
+        </div>
 
-      <v-layout class="d-flex justify-content-center">
-        <p class="text-center mt-2">Agregar Direccion</p>
-      </v-layout>
+        <div class="d-flex justify-content-center mt-3">
+          <v-btn rounded @click="agregarDireccion()">
+            <img src="./assets/plus-circle.png" />
+          </v-btn>
+        </div>
 
-      <div class="d-flex justify-content-center">
-        <v-btn rounded @click="agregarDireccion()">
-          <img src="./assets/plus-circle.png" />
-        </v-btn>
-      </div>
+        <hr />
 
-      <hr />
+        <v-layout class="d-flex justify-content-center">
+          <v-list>
+            <!-- Spinner de carga inicial -->
+            <div class="d-flex justify-content-center pt-3 pb-4">
+              <v-progress-circular v-show="showSpinner" color="dark" indeterminate size="30"></v-progress-circular>
+            </div>
+            <v-list-item v-for="(datos, index) in direccionLista" :key="index">
+              <v-text-field
+                label="Nombre del Barrio"
+                centered
+                prepend-inner-icon="mdi-map-marker"
+                class="mr-3"
+                outlined
+                rows="1"
+                v-model="datos.barrioName"
+              ></v-text-field>
 
-      <v-layout class="d-flex justify-content-center">
-        <v-list>
-          <v-list-item v-for="(datos, index) in direccionLista" :key="index">
-            <v-textarea
-              label="Nombre del Barrio"
-              auto-grow
-              centered
-              class="mr-3"
-              outlined
-              rows="1"
-              row-height="5"
-              v-model="datos.barrioName"
-            ></v-textarea>
+              <v-text-field
+                centered
+                label="Precio"
+                class="ml-3"
+                prepend-inner-icon="mdi-currency-usd"
+                outlined
+                rows="1"
+                v-model="datos.precio"
+              ></v-text-field>
 
-            <v-textarea
-              label="Precio $"
-              auto-grow
-              class="ml-3"
-              outlined
-              rows="1"
-              row-height="5"
-              v-model="datos.precio"
-            ></v-textarea>
+              <v-icon @click="QuitarDireccion(index)" class="ml-2 mb-4">mdi-close</v-icon>
+            </v-list-item>
+          </v-list>
+        </v-layout>
+        <hr />
 
-            <v-icon @click="QuitarDireccion(index)" class="ml-2 mb-4">mdi-close</v-icon>
-          </v-list-item>
-        </v-list>
-      </v-layout>
-      <hr />
+        <p
+          v-show="showMsjGuardado"
+          class="text-success text-center mt-3"
+        >Domicilio guardados con exito!</p>
 
-      <p v-show="showMsjGuardado" class="text-success text-center mt-3">Domicilio guardados con exito!</p>
-      
-      <!-- Boton Guardar -->
-      <div class="d-flex justify-content-center">
-        <v-btn @click="guardarDireccion()">Guardar</v-btn>
-      </div>
-
-    </v-card>
+        <!-- Boton Guardar -->
+        <div class="d-flex justify-content-center">
+          <v-btn @click="guardarDireccion()">Guardar</v-btn>
+        </div>
+      </v-card>
+    </div>
   </div>
 </template>
 
@@ -62,7 +65,7 @@
 export default {
   created() {
     this.init();
-    this.getDirecciones()
+    this.getDirecciones();
   },
 
   data() {
@@ -70,6 +73,7 @@ export default {
       direccionLista: [],
       indexDeleteToken: "",
       showMsjGuardado: false,
+      showSpinner: true,
       firebaseConfig: {
         apiKey: "AIzaSyCJ9_4cm_hLPFUfvc4wavU0rR0kIFEI6L4",
         authDomain: "market-4d1a0.firebaseapp.com",
@@ -90,63 +94,78 @@ export default {
     },
     //Llama la lista de direcciones guardadas
     getDirecciones() {
-      if (!firebase.apps.length) {
-        firebase.initializeApp(this.firebaseConfig);
-      }
-      let db
-      db = firebase.firestore();
-      //Solicita todos los documentos y su data interna
-      db.collection("direcciones")
-        .get()
-        .then(querySnapshot => {
-          querySnapshot.forEach(doc => {
-            if (doc.id) {
-              //convierte el json a array
+      try {
+        if (!firebase.apps.length) {
+          firebase.initializeApp(this.firebaseConfig);
+        }
+        let db;
+        db = firebase.firestore();
+        //Solicita todos los documentos y su data interna
+        db.collection("direcciones")
+          .get()
+          .then(querySnapshot => {
+            querySnapshot.forEach(doc => {
+              if (doc.id) {
+                //convierte el json a array
                 let arraySession = Object.values(doc.data());
-                for (const key in arraySession) {
-                  
-                  this.direccionLista.push(arraySession[key]);
+                this.showSpinner = false;
+                if (arraySession.length != 0) {
+                  for (const key in arraySession) {
+                    this.direccionLista.push(arraySession[key]);
+                  }
+                } else {
+                  this.direccionLista.push({ barrioName: "", precio: "" });
                 }
-             
-            }
+              }
+            });
           });
-        });
+      } catch (error) {
+        console.log(error);
+      }
     },
     //quita la direccion de la lista
     QuitarDireccion(index) {
       this.$delete(this.direccionLista, index);
-      this.showMsjGuardado = false
+      this.showMsjGuardado = false;
     },
     //Agrega los campos para poner una nuevo domicilio
     agregarDireccion() {
-      this.direccionLista.push({barrioName: "", precio: "" });
-      console.log(this.direccionLista)
-      this.showMsjGuardado = false
+      this.direccionLista.push({ barrioName: "", precio: "" });
+      console.log(this.direccionLista);
+      this.showMsjGuardado = false;
     },
-    guardarDireccion(){
+    guardarDireccion() {
       if (!firebase.apps.length) {
         firebase.initializeApp(this.firebaseConfig);
       }
-      let db
+      let db;
       db = firebase.firestore();
 
       let ListaTokensActualizada = {};
       for (const index in this.direccionLista) {
-        ListaTokensActualizada["_"+index] = this.direccionLista[index];
+        ListaTokensActualizada["_" + index] = this.direccionLista[index];
       }
-        console.log(ListaTokensActualizada);
-      db.collection("direcciones").doc("domicilio").set(ListaTokensActualizada)
-          .then(function () {
-          console.log('Campos creados con exito!');
-          this.showMsjGuardado = true
-          })
-          .catch(function (error) {
-          console.error('Error updating document: ', error);
-          });
+      console.log(ListaTokensActualizada);
+      db.collection("direcciones")
+        .doc("domicilio")
+        .set(ListaTokensActualizada)
+        .then(() => {
+          console.log("Campos creados con exito!");
+          this.showMsjGuardado = true;
+        })
+        .catch(error => {
+          console.error("Error updating document: ", error);
+        });
     }
   }
 };
 </script>
 
 <style scoped>
+.divBackground{
+  background: rgb(204,204,204);
+}
+.container{
+  background: rgb(230, 230, 230);
+}
 </style>
