@@ -10,7 +10,7 @@
       </v-layout>
 
       <div class="d-flex justify-content-center">
-        <v-btn rounded @click="agregarDireccion(index)">
+        <v-btn rounded @click="agregarDireccion()">
           <img src="./assets/plus-circle.png" />
         </v-btn>
       </div>
@@ -29,7 +29,6 @@
               rows="1"
               row-height="5"
               v-model="datos.barrioName"
-              @click="clickHandleList(index)"
             ></v-textarea>
 
             <v-textarea
@@ -47,10 +46,14 @@
         </v-list>
       </v-layout>
       <hr />
+
+      <p v-show="showMsjGuardado" class="text-success text-center mt-3">Domicilio guardados con exito!</p>
+      
       <!-- Boton Guardar -->
       <div class="d-flex justify-content-center">
-        <v-btn>Guardar</v-btn>
+        <v-btn @click="guardarDireccion()">Guardar</v-btn>
       </div>
+
     </v-card>
   </div>
 </template>
@@ -66,6 +69,7 @@ export default {
     return {
       direccionLista: [],
       indexDeleteToken: "",
+      showMsjGuardado: false,
       firebaseConfig: {
         apiKey: "AIzaSyCJ9_4cm_hLPFUfvc4wavU0rR0kIFEI6L4",
         authDomain: "market-4d1a0.firebaseapp.com",
@@ -84,12 +88,6 @@ export default {
         firebase.initializeApp(this.firebaseConfig);
       }
     },
-
-    //Maneja el click de la lista
-    clickHandleList(index) {
-      console.log(index);
-    },
-
     //Llama la lista de direcciones guardadas
     getDirecciones() {
       if (!firebase.apps.length) {
@@ -103,20 +101,48 @@ export default {
         .then(querySnapshot => {
           querySnapshot.forEach(doc => {
             if (doc.id) {
-              console.log("Document ID: " + doc.id);
-              console.log("Data: " + doc.data());
+              //convierte el json a array
+                let arraySession = Object.values(doc.data());
+                for (const key in arraySession) {
+                  
+                  this.direccionLista.push(arraySession[key]);
+                }
+             
             }
           });
         });
     },
-
     //quita la direccion de la lista
     QuitarDireccion(index) {
       this.$delete(this.direccionLista, index);
+      this.showMsjGuardado = false
     },
     //Agrega los campos para poner una nuevo domicilio
-    agregarDireccion(index) {
-      this.direccionLista.push({ barrioName: "", precio: "" });
+    agregarDireccion() {
+      this.direccionLista.push({barrioName: "", precio: "" });
+      console.log(this.direccionLista)
+      this.showMsjGuardado = false
+    },
+    guardarDireccion(){
+      if (!firebase.apps.length) {
+        firebase.initializeApp(this.firebaseConfig);
+      }
+      let db
+      db = firebase.firestore();
+
+      let ListaTokensActualizada = {};
+      for (const index in this.direccionLista) {
+        ListaTokensActualizada["_"+index] = this.direccionLista[index];
+      }
+        console.log(ListaTokensActualizada);
+      db.collection("direcciones").doc("domicilio").set(ListaTokensActualizada)
+          .then(function () {
+          console.log('Campos creados con exito!');
+          this.showMsjGuardado = true
+          })
+          .catch(function (error) {
+          console.error('Error updating document: ', error);
+          });
     }
   }
 };
